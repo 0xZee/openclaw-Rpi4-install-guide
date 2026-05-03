@@ -9,6 +9,9 @@
 set -e
 
 echo "🚀 Starting Raspberry Pi setup..."
+echo "------------------------------------"
+echo " "
+echo "------------------------------------"
 
 # ----------------------------
 # 1. System update & cleanup
@@ -19,12 +22,18 @@ sudo apt full-upgrade -y
 sudo apt autoremove -y
 sudo apt autoclean
 
+echo "------------------------------------"
+echo " "
+echo "------------------------------------"
 # ----------------------------
 # 2. Set timezone (Paris)
 # ----------------------------
 echo "🕒 Setting timezone to Europe/Paris..."
 sudo timedatectl set-timezone Europe/Paris
 
+echo "------------------------------------"
+echo " "
+echo "------------------------------------"
 # ----------------------------
 # 3. Secure SSH
 # ----------------------------
@@ -39,6 +48,9 @@ sudo sed -i 's/^#\?Port.*/Port 22/' $SSHD_CONFIG
 
 sudo systemctl restart ssh
 
+echo "------------------------------------"
+echo " "
+echo "------------------------------------"
 # ----------------------------
 # 4. UFW Firewall
 # ----------------------------
@@ -54,6 +66,9 @@ if ! sudo ufw status | grep -q "Status: active"; then
     sudo ufw --force enable
 fi
 
+echo "------------------------------------"
+echo " "
+echo "------------------------------------"
 # ----------------------------
 # 5. Fail2Ban
 # ----------------------------
@@ -78,6 +93,9 @@ EOF
 sudo systemctl enable fail2ban
 sudo systemctl restart fail2ban
 
+echo "------------------------------------"
+echo " "
+echo "------------------------------------"
 # ----------------------------
 # 6. Memory Optimization
 # ----------------------------
@@ -91,6 +109,9 @@ else
     sudo sed -i 's/^gpu_mem=.*/gpu_mem=16/' $CONFIG_TXT
 fi
 
+echo "------------------------------------"
+echo " "
+echo "------------------------------------"
 # ----------------------------
 # 7. Swap configuration
 # ----------------------------
@@ -118,6 +139,9 @@ if ! grep -q "/swapfile" /etc/fstab; then
     echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
 fi
 
+echo "------------------------------------"
+echo " "
+echo "------------------------------------"
 # ----------------------------
 # 8. Node.js 22
 # ----------------------------
@@ -128,6 +152,9 @@ if ! command -v node >/dev/null 2>&1 || [[ "$(node -v)" != v22* ]]; then
     sudo apt install -y nodejs
 fi
 
+echo "------------------------------------"
+echo " "
+echo "------------------------------------"
 # ----------------------------
 # 9. Node Compile Cache
 # ----------------------------
@@ -135,21 +162,25 @@ echo "⚡ Setting Node compile cache..."
 
 BASHRC="$HOME/.bashrc"
 
-if ! grep -q "NODE_COMPILE_CACHE" "$BASHRC"; then
+# Create cache directory once
+mkdir -p /var/tmp/node-compile-cache
+
+# Remove any previous cache config (clean update)
+sed -i '/# Node compile cache/,+2d' "$BASHRC"
+
+# Add fresh config
 cat >> "$BASHRC" <<'EOF'
 
-# Node compile cache for OpenClaw / agents
-export NODE_COMPILE_CACHE=/var/tmp/openclaw-compile-cache
-mkdir -p /var/tmp/openclaw-compile-cache
-export OPENCLAW_NO_RESPAWN=1
+# Node compile cache (Hermes agent)
+export NODE_COMPILE_CACHE=/var/tmp/node-compile-cache
 EOF
-fi
 
 # Apply immediately
-export NODE_COMPILE_CACHE=/var/tmp/openclaw-compile-cache
-mkdir -p /var/tmp/openclaw-compile-cache
-export OPENCLAW_NO_RESPAWN=1
+export NODE_COMPILE_CACHE=/var/tmp/node-compile-cache
 
+echo "------------------------------------"
+echo " "
+echo "------------------------------------"
 # ----------------------------
 # 10. Unattended Upgrades
 # ----------------------------
@@ -162,8 +193,16 @@ APT::Periodic::Update-Package-Lists "1";
 APT::Periodic::Unattended-Upgrade "1";
 EOF
 
+
+echo "------------------------------------"
+echo " "
+echo "------------------------------------"
 # ----------------------------
 # Done
 # ----------------------------
 echo "✅ Setup complete!"
 echo "⚠️ Reboot recommended: sudo reboot"
+
+echo "------------------------------------"
+echo " "
+echo "------------------------------------"
